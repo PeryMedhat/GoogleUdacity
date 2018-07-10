@@ -20,17 +20,9 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
-  /**
-   * Fetch all restaurants.
-   */  
-     static fetchRestaurants(callback) {
 
-
-    fetch(DBHelper.DATABASE_URL,{method:'GET'})
-      .then(response=>response.json()
-        .then(callback))
-      .then(function(restaurant) {
-            const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
+ static saveToDb(restaurant){
+ const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
                 switch(upgradeDB.oldVersion) {
                 case 0:
                     upgradeDB.createObjectStore('restaurants', {
@@ -38,9 +30,7 @@ class DBHelper {
                     });
               
                 }
-            });
-
-            dbPromise.then(db => {
+ dbPromise.then(db => {
                 const tx = db.transaction('restaurants', 'readwrite');
                 var keyValStore = tx.objectStore('restaurants');
 
@@ -53,9 +43,48 @@ class DBHelper {
            
         }).catch(function (error) {
             callback((`Request failed. Returned status of ${error}`), null);
-        });
+        });      
+  }
+  /**
+   * Fetch all restaurants.
+   */  
+     static fetchRestaurants(callback) {
+
+
+    fetch(DBHelper.DATABASE_URL,{method:'GET'})
+      .then(response=>response.json()
+        .then(callback))
+
+const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
+                switch(upgradeDB.oldVersion) {
+                case 0:
+                    upgradeDB.createObjectStore('restaurants', {
+                        keyPath: 'id'
+                    });
+              
+                }
+ dbPromise.then(db => {
+                const tx = db.transaction('restaurants', 'readwrite');
+                var keyValStore = tx.objectStore('restaurants');
+
+                restaurant.forEach(function(restaurant) {
+                    keyValStore.put(restaurant);
+                })
+                return keyValStore.getAll();
+            })
+           
+        }).catch(function (error) {
+            callback((`Request failed. Returned status of ${error}`), null);
+        });  
 
   }
+
+     
+        
+
+           
+
+ 
     
   /**
    * Fetch a restaurant by its ID.
