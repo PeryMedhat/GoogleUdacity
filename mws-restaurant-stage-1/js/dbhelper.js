@@ -2,12 +2,17 @@
  * Common database helper functions.
  */
 
-navigator.serviceWorker.register('/sw.js').then(function(reg){
-
- console.log('Yay');
-}).catch(function(err){
- console.log('Boo');
-});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      // Registration was successful
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }, function(err) {
+      // registration failed :(
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}
 
 class DBHelper {
 
@@ -17,73 +22,63 @@ class DBHelper {
    */
   static get DATABASE_URL() {
     const port = 1337 // Change this to your server port
+     const remote = `https://reviews-server.tt34.com/restaurants`;
     return `http://localhost:${port}/restaurants`;
   }
 
+ static fetchRestaurantsAgain() {
 
- static saveToDb(restaurant){
- const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
-                switch(upgradeDB.oldVersion) {
-                case 0:
-                    upgradeDB.createObjectStore('restaurants', {
-                        keyPath: 'id'
-                    });
-              
-                }
- dbPromise.then(db => {
-                const tx = db.transaction('restaurants', 'readwrite');
-                var keyValStore = tx.objectStore('restaurants');
+fetch(DBHelper.DATABASE_URL,{method:'GET'})
+      .then(response=>response.json()
+   
+ .then(function (restaurantsTest){
 
-                restaurant.forEach(function(restaurant) {
-                    keyValStore.put(restaurant);
-                })
-                return keyValStore.getAll();
-            }).then((obj) => console.log(obj)); 
-                callback(null, restaurants);
-           
-        }).catch(function (error) {
-            callback((`Request failed. Returned status of ${error}`), null);
-        });      
-  }
+
+  console.log(restaurantsTest);
+
+var dbPromise = idb.open('restaurantDB',1, function (upgradeDB){
+
+const restaurantsStore = upgradeDB.createObjectStore('myRestaurants', {
+      keyPath: 'id'
+    });
+
+ restaurantsTest.forEach(restaurant => {
+            restaurantsStore.add(restaurant);
+          });
+
+});
+      
+
+   /*   dbPromise.then(function(db)
+      {
+  var tx = db.transaction('myRestaurants');
+  var keyValStore = tx.objectStore('myRestaurants');
+
+  returnkeyValStore.get('hello');
+
+      }) .then (function(val) {
+
+console.log(val);
+      });*/
+        }))
+
+
+
+    
+} 
+
   /**
-   * Fetch all restaurants.
+   * Fetch all restaurants.bv
    */  
      static fetchRestaurants(callback) {
 
 
     fetch(DBHelper.DATABASE_URL,{method:'GET'})
-      .then(response=>response.json()
-        .then(callback))
-
-const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
-                switch(upgradeDB.oldVersion) {
-                case 0:
-                    upgradeDB.createObjectStore('restaurants', {
-                        keyPath: 'id'
-                    });
-              
-                }
- dbPromise.then(db => {
-                const tx = db.transaction('restaurants', 'readwrite');
-                var keyValStore = tx.objectStore('restaurants');
-
-                restaurant.forEach(function(restaurant) {
-                    keyValStore.put(restaurant);
-                })
-                return keyValStore.getAll();
-            })
-           
-        }).catch(function (error) {
-            callback((`Request failed. Returned status of ${error}`), null);
-        });  
-
-  }
-
-     
-        
-
-           
-
+      .then(response=>response.json() 
+      .then(callback)      
+       )  
+DBHelper.fetchRestaurantsAgain();
+}
  
     
   /**
@@ -205,7 +200,7 @@ const dbPromise = idb.open('restaurantsDB', 1, upgradeDB => {
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    return (`/mws-restaurant-stage-2/img/${restaurant.photograph}.jpg`);
+    return (`/img/${restaurant.photograph}.jpg`);
   }
 
   /**

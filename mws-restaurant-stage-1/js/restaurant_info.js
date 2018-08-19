@@ -65,8 +65,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
 image.alt = restaurant.name + "  image";
     image.tabIndex = "0";
-    image.setAttribute('srcset',`mws-restaurant-stage-2/images/${restaurant.id}-small_1x.jpg 1x,/images/${restaurant.id}-small_2x.jpg 2x`);
-    image.setAttribute('srcset',`/mws-restaurant-stage-2/images/${restaurant.id}-larg_1x.jpg 1x,/images/${restaurant.id}-larg_2x.jpg 2x`);
+    image.setAttribute('srcset',`/images/${restaurant.id}-small_1x.jpg 1x,/images/${restaurant.id}-small_2x.jpg 2x`);
+    image.setAttribute('srcset',`/images/${restaurant.id}-larg_1x.jpg 1x,/images/${restaurant.id}-larg_2x.jpg 2x`);
 
 
 

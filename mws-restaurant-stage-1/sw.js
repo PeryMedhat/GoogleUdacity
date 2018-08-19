@@ -1,32 +1,43 @@
 const cache = "res-v1";
 
-self.addEventListener('fetch',(event) => {
-  console.info('Event : Fetch');
-  var request = event.request;
+const BLACKLIST =[
+    '/?restaurant_id=*',
+    '/restaurants',
+    '/reviews',
+    'images/*'
+] 
+self.addEventListener('fetch', function(event) {
   event.respondWith(
- caches.match(request).then((response) => {
+      caches.match(event.request).then(function(response) {
+        if (response) {
+                    return response;
+        }
 
-if(response){
-
-  return response;
-}
-
-
-return fetch(request).then((response) => {
-
-  var responseToCache = response.clone();
-
-  caches.open(cacheName).then((cache) =>
-  {
-
-    cache.put(request,responseToCache);
-  }
-
-  return response;
-});
-
-}) 
+        return fetch(event.request).then(function(response) {
+          var shouldCache = response.ok;
 
 
-    );
+for (var i = 0; i < BLACKLIST.length; ++i) {
+              var b = new RegExp(BLACKLIST[i]);
+              if (b.test(event.request.url)) {
+                shouldCache = false;
+                break;
+              }
+            }
+
+          if (event.request.method == 'POST') {
+            shouldCache = false;
+          }
+
+        if (shouldCache) {
+            return caches.open(cache).then(function(cache) {
+              cache.put(event.request, response.clone());
+              return response;
+            });
+          } else {
+            return response;
+          }
+        });
+      })
+  );
 });
