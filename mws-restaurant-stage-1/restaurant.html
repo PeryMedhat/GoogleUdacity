@@ -9,10 +9,11 @@
   <!-- Main CSS file -->
   <link rel="stylesheet" href="css/styles.css" type="text/css">
     <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/myForm.css" />
      <meta charset="utf-8">
       <link rel="manifest" href="/manifest.json">
       <link rel="shortcut icon" type="image/png" href="/img/icon.png"/>
-
+<meta charset="utf-8" />
   <title>Restaurant Info</title>
 </head>
 
@@ -54,6 +55,28 @@
     <section id="reviews-container" >
       <ul id="reviews-list"></ul>
     </section>
+
+     <button class="open-button" onclick="opening()">Add Review</button>
+
+        <div class="form-popup" id="myForm">
+            <form  class="form-container"> 
+                <h1>Add Review</h1>
+
+                <label for="name"><b>Name:</b></label>
+                <input type="text" placeholder="Your Name" name="name" id="name" required>
+
+                <label for="rating" ><b>Rating:</b></label>
+                <input type="text" placeholder="Your rating :)" name="rating" id="rating" required>
+
+                <label for="comment"><b>Comment:</b></label>
+                <input type="text" placeholder="Your comment" name="comment" id="comment" required>
+
+                <button type="button" onclick="getReview()" class="btn">Save</button>
+                <button type="submit" class="btn cancel" onclick="closing()">Close</button>
+            </form>
+        </div>
+
+    
     <!-- End reviews -->
   </main>
   <!-- End main -->
@@ -73,6 +96,15 @@
  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDxlGlzbiZZ75r-baym-6S12zGSjBB1Erk&libraries=places&callback=initMap"></script> 
   <!-- End scripts -->
 
+  <script>
+        function opening() {
+            document.getElementById("myForm").style.display = "block";
+        }
+
+        function closing() {
+            document.getElementById("myForm").style.display = "none";
+        }
+    </script>
 </body>
 
 </html>

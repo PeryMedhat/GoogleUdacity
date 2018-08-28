@@ -21,6 +21,8 @@ var map;
   });
 } 
 
+
+
 /**
  * Get current restaurant from page URL.
  */
@@ -45,6 +47,7 @@ fetchRestaurantFromURL = (callback) => {
     });
   }
 }
+
 
 /**
  * Create restaurant HTML and add it to the webpage
@@ -78,8 +81,8 @@ image.alt = restaurant.name + "  image";
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
-  fillReviewsHTML();
+  const restuarantId = getParameterByName('id');
+    fetchRestuarantReview(restuarantId)
 }
 
 /**
@@ -108,36 +111,41 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
  */
 fillReviewsHTML = (reviews = self.restaurant.reviews) => {
   const container = document.getElementById('reviews-container');
-  const title = document.createElement('h2');
-  title.innerHTML = 'Reviews';
-  title.tabIndex = "0";
-  container.appendChild(title);
+ if (!container.querySelector('h2')) {
+        const title = document.createElement('h2');
+        title.innerHTML = 'Reviews';
+        container.appendChild(title);
+    }
 
-  if (!reviews) {
-    const noReviews = document.createElement('p');
-    noReviews.innerHTML = 'No reviews yet!';
-    container.appendChild(noReviews);
-    return;
-  }
-  const ul = document.getElementById('reviews-list');
-  reviews.forEach(review => {
-    ul.appendChild(createReviewHTML(review));
-  });
-  container.appendChild(ul);
+
+
+    if (!reviews) {
+        const noReviews = document.createElement('p');
+        noReviews.innerHTML = 'No reviews yet!';
+        container.appendChild(noReviews);
+        return;
+    }
+    const ul = document.getElementById('reviews-list');
+
+    reviews.reverse().forEach(review => {
+        ul.appendChild(createReviewHTML(review));
+    });
+    container.appendChild(ul);
 }
 
 /**
  * Create review HTML and add it to the webpage.
  */
 createReviewHTML = (review) => {
-  const li = document.createElement('li');
+ const li = document.createElement('li');
   const name = document.createElement('p');
   name.innerHTML = review.name;
   li.appendChild(name);
-  li.tabIndex = "0";
+    li.tabIndex = "0";
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+    // date.innerHTML = review.Date;
+    date.innerHTML = new Date(review.createdAt).toDateString();
   li.appendChild(date);
 
   const rating = document.createElement('p');
@@ -146,7 +154,17 @@ createReviewHTML = (review) => {
 
   const comments = document.createElement('p');
   comments.innerHTML = review.comments;
-  li.appendChild(comments);
+    li.appendChild(comments);
+
+
+    if (!navigator.onLine) {
+        li.classList.add("offline");
+        let label = document.createElement('div')
+        label.innerHTML = "Offline"
+        label.id = 'offlineLbl'
+        li.appendChild(label);
+
+    }
 
   return li;
 }
@@ -176,4 +194,39 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+
+fetchRestuarantReview = (id) => {
+    DBHelper.fetchRestuarantReviews(id).then(reviews => {
+        fillReviewsHTML(reviews);
+    });
+}
+
+
+getReview = () => {
+    const restaurantId = getParameterByName('id');
+    const name = document.getElementById('name').value;
+    const rating = document.getElementById('rating').value;
+    const comment = document.getElementById('comment').value;
+
+
+    const review = {
+        "restaurant_id": restaurantId,
+        "name": name,
+        "rating": rating,
+        "comments": comment,
+        "createdAt": new Date()
+    }
+
+    DBHelper.addReview(review).then(() => {
+        const container = document.getElementById('reviews-container');
+        const ul = document.getElementById('reviews-list');
+        ul.insertBefore(createReviewHTML(review), ul.firstChild);
+        container.appendChild(ul);
+    }).catch((offlineReview) => {
+        const ul = document.getElementById('reviews-list');
+        ul.appendChild(createReviewHTML(offlineReview.data));
+        })
+     document.getElementById("myForm").style.display = "none";
 }

@@ -14,6 +14,26 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+function openIndexedDB (){
+  if (!'serviceWorker' in navigator) return ;
+
+  indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+  if (!indexedDB) {
+    console.error("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+  }
+  const openRequst = indexedDB.open('restaurants', 2);
+  openRequst.onupgradeneeded = function(event) {
+    idb = event.target.result;
+    idb.createObjectStore('restaurant', {
+      keyPath: 'id'
+    });
+    idb.createObjectStore('reviews', {
+      keyPath: 'id'
+    });
+  }
+  return openRequst ;
+}
 class DBHelper {
 
   /**
@@ -26,9 +46,45 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
- static fetchRestaurantsAgain() {
+  static get REVEIWS_DATABASE_URL(){
+  const port = 1337 // Change this to your server port
+     const remote = `https://reviews-server.tt34.com/reviews`;
+    return `http://localhost:${port}/reviews`;
+  }
 
-fetch(DBHelper.DATABASE_URL,{method:'GET'})
+ static fetchRestaurantsAgain() {
+let xhr = new XMLHttpRequest();
+
+ const openIDB = openIndexedDB();
+ xhr.open('GET', DBHelper.DATABASE_URL);
+    xhr.onload = () => {
+      if (xhr.status === 200) { // Got a success response from server!
+        const restaurants = JSON.parse(xhr.responseText);   
+       
+
+        openIDB.onsuccess = (event)=> { 
+          const idb= event.target.result;
+          const objectStore = idb.transaction('restaurant', 'readwrite').objectStore('restaurant');
+          restaurants.forEach(restaurant => {
+            objectStore.add(restaurant);
+          });
+        }
+        openIDB.onerror = (error)=> { 
+          console.error('IDB is not opened');
+        }
+       
+      } else { // Oops!. Got an error from server.
+        const error = (`Request failed. Returned status of ${xhr.status}`);
+       
+      }
+    };
+    xhr.send();
+
+
+
+
+
+/*fetch(DBHelper.DATABASE_URL,{method:'GET'})
       .then(response=>response.json()
    
  .then(function (restaurantsTest){
@@ -38,7 +94,7 @@ fetch(DBHelper.DATABASE_URL,{method:'GET'})
 
 var dbPromise = idb.open('restaurantDB',1, function (upgradeDB){
 
-const restaurantsStore = upgradeDB.createObjectStore('myRestaurants', {
+const restaurantsStore = upgradeDB.createObjectStore('restaurant', {
       keyPath: 'id'
     });
 
@@ -47,21 +103,8 @@ const restaurantsStore = upgradeDB.createObjectStore('myRestaurants', {
           });
 
 });
-      
-
-   /*   dbPromise.then(function(db)
-      {
-  var tx = db.transaction('myRestaurants');
-  var keyValStore = tx.objectStore('myRestaurants');
-
-  returnkeyValStore.get('hello');
-
-      }) .then (function(val) {
-
-console.log(val);
-      });*/
         }))
-
+*/
 
 
     
@@ -216,6 +259,110 @@ DBHelper.fetchRestaurantsAgain();
     );
     return marker;
   } 
+
+  static addReview(review) {
+        debugger;
+        const offlineReview = {
+            name: 'addReview',
+            data: review,
+            object_type: 'review'
+        }
+        if (!navigator.onLine) {
+            DBHelper.sendOnline(offlineReview);
+            return Promise.reject(offlineReview);
+        }
+        return DBHelper.sendReview(review)
+    }
+
+    static sendReview(review) {
+        debugger;
+        const Review = {
+            "name": review.name,
+            "rating": review.rating,
+            "comments": review.comments,
+            "restaurant_id": review.restaurant_id
+        }
+        const Options = {
+            method: 'POST',
+            body: JSON.stringify(Review),
+        };
+
+        return fetch(`${DBHelper.REVEIWS_DATABASE_URL}`, Options)
+    }
+
+
+static sendReviewWhenOnline(offlineReview){ 
+     console.log('event Listin');
+     
+    localStorage.setItem('reviews', JSON.stringify(offlineReview.data));
+    window.addEventListener('online', (event)=>{
+      console.log('Now I am Online ...... ');
+      
+      const review = JSON.parse(localStorage.getItem('reviews'));
+      let  offlineReviewUI = document.querySelectorAll('.reviews-offline');
+      offlineReviewUI.forEach(el=>{
+        el.classList.remove("reviews-offline");
+        el.removeChild(document.getElementById('offline-lable'));
+      });
+      if (review) {
+        DBHelper.addReview(review);
+      }
+      localStorage.removeItem('reviews');
+    })
+   }
+
+
+       static fetchRestuarantReviews(id) {
+        return fetch(`${DBHelper.REVEIWS_DATABASE_URL}/?restaurant_id=${id}`)
+            .then(res => res.json()).then(reviews => {
+                var request = indexedDB.open('ReviewsDB', 1);
+                request.onerror = function (event) {
+                    alert("Database error: " + event.target.errorCode);
+                };
+                request.onupgradeneeded = function (event) {
+                    var db = event.target.result;
+                    var objectStore = db.createObjectStore("reviews", { keyPath: "id" });
+                    objectStore.transaction.oncomplete = function (event) {
+                        var reviewObjectStore = db.transaction("reviews", "readwrite").objectStore("reviews");
+                        reviews.forEach(function (review) {
+                            reviewObjectStore.add(review);
+                        });
+                    };
+                };
+                return reviews;
+            })
+    }
+
+
+
+
+
+ static changeFavoriteStatus (resturantId, newStatus) { 
+    fetch(`${DBHelper.DATABASE_URL}/${resturantId}/?is_favorite=${newStatus}`, {
+      method: 'PUT'
+    }).then(()=>{
+    const openIDB = openIndexedDB();
+      openIDB.onsuccess = (event)=> {
+        const idb= event.target.result;
+             const objectStore = idb.transaction('restaurant', 'readwrite').objectStore('restaurant');
+        const dbGetRequest = objectStore.get(resturantId);
+        dbGetRequest.onsuccess = event =>{
+           const restuarant = event.target.result;
+          console.log(restuarant);
+          restuarant.is_favorite = newStatus;
+          objectStore.put(restuarant);
+        }
+  
+      }
+    })
+  }
+
+    
+
+
+
+
+
 
 }
 

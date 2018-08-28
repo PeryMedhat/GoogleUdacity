@@ -320,5 +320,18 @@ nav {
 #restaurant-hours td {
     color: #666;
 }
+
+
+.fave-icon {
+  float: right;
+  font-size: 3rem;
+  margin: 0px 23px 3px 1px;
+  color: #575757;
+  cursor: pointer;
+}
+
+.favorite {
+  color: #dd1f38;
+}
 /*=====================Media Query=====================*/
 

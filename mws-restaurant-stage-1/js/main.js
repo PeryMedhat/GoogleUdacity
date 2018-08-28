@@ -138,27 +138,31 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
     li.tabIndex = "0";
-    
-
-   if(restaurant.photograph) {
- const image = document.createElement('img');
+  const image = document.createElement('img');
   image.className = 'restaurant-img';
+   image.alt = restaurant.name+"  image";
+  if(restaurant.photograph){
 
-     image.src = DBHelper.imageUrlForRestaurant(restaurant);
-    image.alt = restaurant.name+"  image";
-    
-  li.append(image);
-    
-   }
+  image.src = DBHelper.imageUrlForRestaurant(restaurant);
 
- 
+  }
+    li.append(image);
   
- 
-
   const name = document.createElement('h1');
   name.innerHTML = restaurant.name;
  
   li.append(name);
+
+    const favIcon = document.createElement('i');
+  favIcon.innerHTML = '♥'
+  favIcon.classList.add('fave-icon') ;
+  favIcon.onclick =  () => { 
+    DBHelper.changeFavoriteStatus(restaurant.id, !restaurant.is_favorite);
+    restaurant.is_favorite = !restaurant.is_favorite;
+    changeFavIconClass(favIcon, restaurant.is_favorite);
+  }
+  changeFavIconClass(favIcon, restaurant.is_favorite);
+  li.append(favIcon);
 
   const neighborhood = document.createElement('p');
   neighborhood.innerHTML = restaurant.neighborhood;
@@ -186,5 +190,34 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     self.markers.push(marker);
   });
 }
+
+
+
+function changeFavIconClass (icon,  isFave) {
+  console.log(isFave);
+  if (isFave && isFave !== "false") {
+    icon.classList.add('favorite');
+    icon.setAttribute('aria-label', 'favorite this restaurant');
+  } else { 
+    icon.classList.remove('favorite');
+    icon.setAttribute('aria-label', 'unfavorite this restaurant');
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
