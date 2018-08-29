@@ -1,5 +1,10 @@
+// import swal from 'sweetalert';
+
 /**
  * Common database helper functions.
+ */
+/**
+ * Register Service Worker
  */
 
 if ('serviceWorker' in navigator) {
@@ -14,6 +19,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+/*
+* Open Indexed Database .
+*/
 
 function openIndexedDB (){
   if (!'serviceWorker' in navigator) return ;
@@ -34,6 +42,7 @@ function openIndexedDB (){
   }
   return openRequst ;
 }
+
 class DBHelper {
 
   /**
@@ -41,22 +50,39 @@ class DBHelper {
    * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
-    const port = 1337 // Change this to your server port
-     const remote = `https://reviews-server.tt34.com/restaurants`;
-    return `http://localhost:${port}/restaurants`;
+    const port = 1337
+    const local = `http://localhost:${port}/restaurants`;
+    const remote = `https://reviews-server.tt34.com/restaurants`;
+    return local ;
   }
 
-  static get REVEIWS_DATABASE_URL(){
-  const port = 1337 // Change this to your server port
-     const remote = `https://reviews-server.tt34.com/reviews`;
-    return `http://localhost:${port}/reviews`;
+  static get DATABASE_FOR_REVIEWS () { 
+    const port = 1337
+    const local = `http://localhost:${port}/reviews`;
+    const remote = `https://reviews-server.tt34.com/reviews`;
+    return local ;
   }
 
- static fetchRestaurantsAgain() {
-let xhr = new XMLHttpRequest();
+  /**
+   * Fetch all restaurants.
+   */
+  static fetchRestaurants(callback) {
+    let xhr = new XMLHttpRequest();
+    const openIDB = openIndexedDB();
+    openIDB.onsuccess = (event)=> {
+      const idb= event.target.result;
+      const objectStore = idb.transaction('restaurant').objectStore('restaurant');
+      const dbGetRequest = objectStore.getAll();
+      dbGetRequest.onsuccess = ()=>{
+        if (dbGetRequest.result)  {
+          console.log(dbGetRequest.result);
+          
+          callback(null, dbGetRequest.result);
+        }        
+      }
 
- const openIDB = openIndexedDB();
- xhr.open('GET', DBHelper.DATABASE_URL);
+    }
+    xhr.open('GET', DBHelper.DATABASE_URL);
     xhr.onload = () => {
       if (xhr.status === 200) { // Got a success response from server!
         const restaurants = JSON.parse(xhr.responseText);   
@@ -72,64 +98,21 @@ let xhr = new XMLHttpRequest();
         openIDB.onerror = (error)=> { 
           console.error('IDB is not opened');
         }
-       
+        callback(null, restaurants);
       } else { // Oops!. Got an error from server.
         const error = (`Request failed. Returned status of ${xhr.status}`);
-       
+        callback(error, null);
       }
     };
     xhr.send();
+  }
 
-
-
-
-
-/*fetch(DBHelper.DATABASE_URL,{method:'GET'})
-      .then(response=>response.json()
-   
- .then(function (restaurantsTest){
-
-
-  console.log(restaurantsTest);
-
-var dbPromise = idb.open('restaurantDB',1, function (upgradeDB){
-
-const restaurantsStore = upgradeDB.createObjectStore('restaurant', {
-      keyPath: 'id'
-    });
-
- restaurantsTest.forEach(restaurant => {
-            restaurantsStore.add(restaurant);
-          });
-
-});
-        }))
-*/
-
-
-    
-} 
-
-  /**
-   * Fetch all restaurants.bv
-   */  
-     static fetchRestaurants(callback) {
-
-
-    fetch(DBHelper.DATABASE_URL,{method:'GET'})
-      .then(response=>response.json() 
-      .then(callback)      
-       )  
-DBHelper.fetchRestaurantsAgain();
-}
- 
-    
   /**
    * Fetch a restaurant by its ID.
    */
   static fetchRestaurantById(id, callback) {
     // fetch all restaurants with proper error handling.
-    DBHelper.fetchRestaurants((restaurants, error) => {
+    DBHelper.fetchRestaurants((error, restaurants) => {
       if (error) {
         callback(error, null);
       } else {
@@ -148,7 +131,7 @@ DBHelper.fetchRestaurantsAgain();
    */
   static fetchRestaurantByCuisine(cuisine, callback) {
     // Fetch all restaurants  with proper error handling
-    DBHelper.fetchRestaurants((restaurants, error) => {
+    DBHelper.fetchRestaurants((error, restaurants) => {
       if (error) {
         callback(error, null);
       } else {
@@ -180,7 +163,7 @@ DBHelper.fetchRestaurantsAgain();
    */
   static fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, callback) {
     // Fetch all restaurants
-    DBHelper.fetchRestaurants((restaurants, error) => {
+    DBHelper.fetchRestaurants((error, restaurants) => {
       if (error) {
         callback(error, null);
       } else {
@@ -201,7 +184,7 @@ DBHelper.fetchRestaurantsAgain();
    */
   static fetchNeighborhoods(callback) {
     // Fetch all restaurants
-    DBHelper.fetchRestaurants((restaurants, error) => {
+    DBHelper.fetchRestaurants((error, restaurants) => {
       if (error) {
         callback(error, null);
       } else {
@@ -219,7 +202,7 @@ DBHelper.fetchRestaurantsAgain();
    */
   static fetchCuisines(callback) {
     // Fetch all restaurants
-    DBHelper.fetchRestaurants((restaurants, error) => {
+    DBHelper.fetchRestaurants((error, restaurants) => {
       if (error) {
         callback(error, null);
       } else {
@@ -243,13 +226,24 @@ DBHelper.fetchRestaurantsAgain();
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    return (`/img/${restaurant.photograph}.jpg`);
+    return (`/img/${restaurant.photograph}`);
+  }
+
+  
+  /**
+   * Restaurant images  URL.
+   */
+  static imgSetUrlForRestaurantSmall(restaurant) {
+    return (`/images/${restaurant.id}-small_1x.jpg 1x,/images/${restaurant.id}-small_2x.jpg 2x`);
+  }
+  static imgSetUrlForRestaurantLarg(restaurant) {
+    return (`/images/${restaurant.id}-larg_1x.jpg 1x,/images/${restaurant.id}-larg_2x.jpg 2x`);
   }
 
   /**
    * Map marker for a restaurant.
    */
- static mapMarkerForRestaurant(restaurant, map) {
+  static mapMarkerForRestaurant(restaurant, map) {
     const marker = new google.maps.Marker({
       position: restaurant.latlng,
       title: restaurant.name,
@@ -258,40 +252,109 @@ DBHelper.fetchRestaurantsAgain();
       animation: google.maps.Animation.DROP}
     );
     return marker;
-  } 
+  }
 
-  static addReview(review) {
-        debugger;
-        const offlineReview = {
-            name: 'addReview',
-            data: review,
-            object_type: 'review'
+  /**
+   * update resturant status .
+   */
+
+  static changeFavoriteStatus (resturantId, newStatus) { 
+    fetch(`${DBHelper.DATABASE_URL}/${resturantId}/?is_favorite=${newStatus}`, {
+      method: 'PUT'
+    }).then(()=>{
+      const openIDB = openIndexedDB();
+      openIDB.onsuccess = (event)=> {
+        const idb= event.target.result;
+        const objectStore = idb.transaction('restaurant', 'readwrite').objectStore('restaurant');
+        const dbGetRequest = objectStore.get(resturantId);
+        dbGetRequest.onsuccess = event =>{
+           const restuarant = event.target.result;
+          console.log(restuarant);
+          restuarant.is_favorite = newStatus;
+          objectStore.put(restuarant);
         }
-        if (!navigator.onLine) {
-            DBHelper.sendOnline(offlineReview);
-            return Promise.reject(offlineReview);
-        }
-        return DBHelper.sendReview(review)
-    }
+  
+      }
+    })
+  }
 
-    static sendReview(review) {
-        debugger;
-        const Review = {
-            "name": review.name,
-            "rating": review.rating,
-            "comments": review.comments,
-            "restaurant_id": review.restaurant_id
-        }
-        const Options = {
-            method: 'POST',
-            body: JSON.stringify(Review),
-        };
+  /**
+   * Fetch all reviews for a restuarant .
+   */
 
-        return fetch(`${DBHelper.REVEIWS_DATABASE_URL}`, Options)
-    }
+   static featchRestuarantReviews (id){
+    return  fetch(`${DBHelper.DATABASE_FOR_REVIEWS}/?restaurant_id=${id}`)
+      .then(res => res.json()).then(reviews=>{
+        const openIDB = openIndexedDB();
+          openIDB.onsuccess = (event)=> {
+            const idb= event.target.result;
+            const store = idb.transaction('reviews', 'readwrite').objectStore('reviews');
+            if (Array.isArray(reviews)){
+              reviews.forEach(review=>{
+                store.put(review);
+              })
+            } else { 
+              store.put(reviews);
+            }
+          }
+          return reviews;
+     })
+   }
 
+   static getStoredbjectsById (table, iID, id) { 
+      openIDB.onsuccess = (event)=> {
+        const idb= event.target.result;
+        if (!idb ) return;
 
-static sendReviewWhenOnline(offlineReview){ 
+        const store = idb.transaction(table).objectStore(table);
+        const indexedID = store.index(iID);
+        return indexedID.getAll(id);
+      }
+   }
+  
+   /**
+    * Check If user online to handle send review  . 
+    */
+   static addReview (review) { 
+     const offlineReview = {
+       name: 'addReview',
+       data: review,
+       object_type: 'review'
+     }
+     console.log(!navigator.onLine, 'online');
+     
+     if (!navigator.onLine) { 
+       DBHelper.sendReviewWhenOnline(offlineReview);
+       return Promise.reject(offlineReview);
+     }
+    return  DBHelper.sendReview(review)
+   }
+
+   /**
+    * Send Review To  Server .
+    */
+   static sendReview (review) { 
+      const reviewSend = { 
+        "name": review.name,
+        "rating": parseInt(review.rating),
+        "comments": review.comments,
+        "restaurant_id": parseInt(review.restaurant_id)
+      }
+      const  fetchOption = { 
+        method: 'POST',
+        body: JSON.stringify(reviewSend),
+        // headers: new Headers({
+        //   'Content-type': 'application/json'
+        // })
+      };
+
+     return fetch(`${DBHelper.DATABASE_FOR_REVIEWS}`, fetchOption)
+   }
+
+   /**
+    * Listin if user come back online and send the review to the server .
+    */
+   static sendReviewWhenOnline(offlineReview){ 
      console.log('event Listin');
      
     localStorage.setItem('reviews', JSON.stringify(offlineReview.data));
@@ -311,58 +374,4 @@ static sendReviewWhenOnline(offlineReview){
     })
    }
 
-
-       static fetchRestuarantReviews(id) {
-        return fetch(`${DBHelper.REVEIWS_DATABASE_URL}/?restaurant_id=${id}`)
-            .then(res => res.json()).then(reviews => {
-                var request = indexedDB.open('ReviewsDB', 1);
-                request.onerror = function (event) {
-                    alert("Database error: " + event.target.errorCode);
-                };
-                request.onupgradeneeded = function (event) {
-                    var db = event.target.result;
-                    var objectStore = db.createObjectStore("reviews", { keyPath: "id" });
-                    objectStore.transaction.oncomplete = function (event) {
-                        var reviewObjectStore = db.transaction("reviews", "readwrite").objectStore("reviews");
-                        reviews.forEach(function (review) {
-                            reviewObjectStore.add(review);
-                        });
-                    };
-                };
-                return reviews;
-            })
-    }
-
-
-
-
-
- static changeFavoriteStatus (resturantId, newStatus) { 
-    fetch(`${DBHelper.DATABASE_URL}/${resturantId}/?is_favorite=${newStatus}`, {
-      method: 'PUT'
-    }).then(()=>{
-    const openIDB = openIndexedDB();
-      openIDB.onsuccess = (event)=> {
-        const idb= event.target.result;
-             const objectStore = idb.transaction('restaurant', 'readwrite').objectStore('restaurant');
-        const dbGetRequest = objectStore.get(resturantId);
-        dbGetRequest.onsuccess = event =>{
-           const restuarant = event.target.result;
-          console.log(restuarant);
-          restuarant.is_favorite = newStatus;
-          objectStore.put(restuarant);
-        }
-  
-      }
-    })
-  }
-
-    
-
-
-
-
-
-
 }
-

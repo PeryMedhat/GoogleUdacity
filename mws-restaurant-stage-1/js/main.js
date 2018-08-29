@@ -1,16 +1,17 @@
-let restaurants,
+let 
+  restaurants,
   neighborhoods,
   cuisines
 var map
 var markers = []
 
-
-
+/**
+ * Fetch neighborhoods and cuisines as soon as the page is loaded.
+ */
 document.addEventListener('DOMContentLoaded', (event) => {
   fetchNeighborhoods();
-  fetchCuisines(); 
+  fetchCuisines();
 });
-
 
 /**
  * Fetch all neighborhoods and set their HTML.
@@ -137,32 +138,43 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
  */
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
-    li.tabIndex = "0";
   const image = document.createElement('img');
   image.className = 'restaurant-img';
-   image.alt = restaurant.name+"  image";
-  if(restaurant.photograph){
+  image.setAttribute('alt', `image from ${restaurant.name} restaurant`);
+  image.setAttribute('tabindex', '0');
 
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
-
+  const  loadImage = image =>{
+    image.src = DBHelper.imageUrlForRestaurant(restaurant);
+    image.setAttribute('srcset', DBHelper.imgSetUrlForRestaurantSmall(restaurant));
   }
-    li.append(image);
+  observerConfig = { 
+    threshold: 0.1
+  }
+
+  if ('IntersectionObserver' in window) {
+    let observer = new IntersectionObserver(onChange, observerConfig);
+    observer.observe(image);
+  }else { 
+    loadImage(image);
+  }
   
-  const name = document.createElement('h1');
-  name.innerHTML = restaurant.name;
- 
-  li.append(name);
-
-    const favIcon = document.createElement('i');
-  favIcon.innerHTML = '♥'
-  favIcon.classList.add('fave-icon') ;
-  favIcon.onclick =  () => { 
-    DBHelper.changeFavoriteStatus(restaurant.id, !restaurant.is_favorite);
-    restaurant.is_favorite = !restaurant.is_favorite;
-    changeFavIconClass(favIcon, restaurant.is_favorite);
+  function onChange(changes, observer) {
+    changes.forEach(change => {
+      if (change.intersectionRatio > 0) {
+        loadImage(change.target);
+        observer.unobserve(change.target);
+      } else {
+        console.log('image isn\'t in the  view .');
+      }
+    });
   }
-  changeFavIconClass(favIcon, restaurant.is_favorite);
-  li.append(favIcon);
+
+  
+  li.append(image);
+
+  const name = document.createElement('h2');
+  name.innerHTML = restaurant.name;
+  li.append(name);
 
   const neighborhood = document.createElement('p');
   neighborhood.innerHTML = restaurant.neighborhood;
@@ -174,25 +186,27 @@ createRestaurantHTML = (restaurant) => {
 
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
+  more.setAttribute('aria-label', `view details of ${restaurant.name} restaurant `);
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
+
+  const favIcon = document.createElement('i');
+  favIcon.innerHTML = '♥'
+  favIcon.classList.add('fave-icon') ;
+  favIcon.onclick =  () => { 
+    DBHelper.changeFavoriteStatus(restaurant.id, !restaurant.is_favorite);
+    restaurant.is_favorite = !restaurant.is_favorite;
+    changeFavIconClass(favIcon, restaurant.is_favorite);
+  }
+  changeFavIconClass(favIcon, restaurant.is_favorite);
+  li.append(favIcon);
 
   return li
 }
 
-addMarkersToMap = (restaurants = self.restaurants) => {
-  restaurants.forEach(restaurant => {
-    // Add marker to the map
-    const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
-    google.maps.event.addListener(marker, 'click', () => {
-      window.location.href = marker.url
-    });
-    self.markers.push(marker);
-  });
-}
-
-
-
+/**
+ * change the class of favorite icon .
+ */
 function changeFavIconClass (icon,  isFave) {
   console.log(isFave);
   if (isFave && isFave !== "false") {
@@ -204,20 +218,16 @@ function changeFavIconClass (icon,  isFave) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Add markers for current restaurants to the map.
+ */
+addMarkersToMap = (restaurants = self.restaurants) => {
+  restaurants.forEach(restaurant => {
+    // Add marker to the map
+    const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
+    google.maps.event.addListener(marker, 'click', () => {
+      window.location.href = marker.url
+    });
+    self.markers.push(marker);
+  });
+}

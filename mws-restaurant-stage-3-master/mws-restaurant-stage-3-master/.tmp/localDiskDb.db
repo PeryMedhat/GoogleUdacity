@@ -45,8 +45,8 @@
           "Sunday": "12:00 pm - 3:00 pm, 5:00 pm - 11:00 pm"
         },
         "createdAt": 1504095568414,
-        "updatedAt": "2018-08-28T21:12:08.245Z",
-        "is_favorite": "false",
+        "updatedAt": "2018-08-29T11:43:45.149Z",
+        "is_favorite": "true",
         "id": 2
       },
       {
@@ -789,6 +789,24 @@
         "createdAt": "2018-08-28T21:57:15.318Z",
         "updatedAt": "2018-08-28T21:57:15.318Z",
         "id": 61
+      },
+      {
+        "name": "test",
+        "rating": 1,
+        "comments": "my review",
+        "restaurant_id": 5,
+        "createdAt": "2018-08-29T09:53:58.060Z",
+        "updatedAt": "2018-08-29T09:53:58.060Z",
+        "id": 62
+      },
+      {
+        "name": "",
+        "rating": 1,
+        "comments": "",
+        "restaurant_id": 4,
+        "createdAt": "2018-08-29T11:59:57.564Z",
+        "updatedAt": "2018-08-29T11:59:57.564Z",
+        "id": 63
       }
     ]
   },
@@ -844,7 +862,7 @@
       "id": 10
     },
     "reviews": {
-      "id": 61
+      "id": 63
     }
   }
 }
