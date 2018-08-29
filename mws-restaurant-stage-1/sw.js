@@ -1,6 +1,8 @@
+
+
 var staticCacheName = 'mws-restaurant';
 let fileToCache = [
-  'index.html',
+  '/index.html',
   'restaurant.html',
   'js/dbhelper.js',
   'js/main.js',
