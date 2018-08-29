@@ -5,6 +5,12 @@ let
 var map
 var markers = []
 
+
+document.getElementById('map').addEventListener('click', () => {
+initMap()
+document.getElementById('map').style.display = "none";
+document.getElementById('map-container').style.display = "block";
+})
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
@@ -172,7 +178,7 @@ createRestaurantHTML = (restaurant) => {
   
   li.append(image);
 
-  const name = document.createElement('h2');
+  const name = document.createElement('h3');
   name.innerHTML = restaurant.name;
   li.append(name);
 
